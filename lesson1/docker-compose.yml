@@ -1,0 +1,42 @@
+services:
+  producer:
+    build: ./producer
+    image: producer:0.1
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=amqp://user:123456@rabbitmq:5672
+    restart: always
+    networks:
+      - rabbitmq-network
+    deploy:
+      mode: replicated 
+      replicas: 5
+
+  consumer:
+    build: ./consumer
+    image: consumer:0.1
+    restart: always
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=amqp://user:123456@rabbitmq:5672
+    networks:
+      - rabbitmq-network
+    deploy:
+      mode: replicated 
+      replicas: 2
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-management
+    restart: always
+    ports:
+      - 15672:15672 # открываем наружу порт админки
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: 123456
+    networks:
+      - rabbitmq-network
+
+networks:
+  rabbitmq-network:
