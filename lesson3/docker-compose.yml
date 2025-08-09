@@ -1,0 +1,198 @@
+services:
+  broker-1:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: broker-1
+    ports:
+      - 19092:9092
+    depends_on:
+      - zookeeper
+    restart: always
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-1:9092,PLAINTEXT_HOST://localhost:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"
+      KAFKA_LEADER_IMBALANCE_CHECK_INTERVAL_SECONDS: 10
+    networks:
+      - cluster-network
+
+  # todo включить автолидер элекшен
+
+  broker-2:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: broker-2
+    ports:
+      - 29092:9092
+    depends_on:
+      - zookeeper
+    restart: always
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-2:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"
+      KAFKA_LEADER_IMBALANCE_CHECK_INTERVAL_SECONDS: 10
+    networks:
+      - cluster-network
+
+
+  broker-3:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: broker-3
+    ports:
+      - 39092:9092
+    depends_on:
+      - zookeeper
+    restart: always
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker-3:9092,PLAINTEXT_HOST://localhost:39092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_LEADER_REBALANCE_ENABLE: "true"
+      KAFKA_LEADER_IMBALANCE_CHECK_INTERVAL_SECONDS: 10
+    networks:
+      - cluster-network
+
+  
+  restaraunt-producer:
+    build:
+      context: ./producers/restaraunt
+    image: restaraunt:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+  gift-producer:
+    build:
+      context: ./producers/gift
+    image: gift:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+
+  site-producer:
+    build:
+      context: ./producers/site
+    image: site:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+  warehouse-product-consumer:
+    build:
+      context: ./consumers/warehouse/product
+    image: product:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+  warehouse-gift-consumer:
+    build:
+      context: ./consumers/warehouse/gift
+    image: gift:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+
+
+  kitchen-consumer:
+    build:
+      context: ./consumers/kitchen
+    image: kitchen:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      BOOTSTRAP_SERVERS: broker-1:9092,broker-2:9092,broker-3:9092
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    networks:
+      - cluster-network
+
+  streams:
+    build:
+      context: ./streams/app
+    image: streams:0.1
+    restart: always
+    networks:
+      - cluster-network
+
+  zookeeper:
+    image: zookeeper:3.8
+    restart: always
+    hostname: zookepper
+    ports:
+      - 2181:2181
+    networks:
+      - cluster-network
+
+
+  init-kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    restart: on-failure
+    depends_on:
+      - broker-1
+      - broker-2
+      - broker-3
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server broker-1:9092 --list
+
+      echo -e 'Creating kafka topics'
+      sleep 10 &&
+      kafka-topics --bootstrap-server broker-1:9092 --create --if-not-exists --topic product-events --replication-factor 3 --partitions 5
+      kafka-topics --bootstrap-server broker-1:9092 --create --if-not-exists --topic gift-events --replication-factor 3 --partitions 5
+      kafka-topics --bootstrap-server broker-1:9092 --create --if-not-exists --topic gift-table-events --replication-factor 3 --partitions 5
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server broker-1:9092 --list
+      "
+    networks:
+      - cluster-network
+
+
+networks:
+  cluster-network:
