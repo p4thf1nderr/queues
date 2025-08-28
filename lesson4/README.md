@@ -31,7 +31,8 @@
 при новых заказах с сайта ожидаем, что баланс ингредиентов будет уменьшаться в соответствии с рецептурой заказываемой продукции.
 
 Проверим начальный баланс ингредиентов на складе:
-![screenshot](images/balance-init.png)
+
+<img src="images/balance-init.png" width="400"/>
 
 
 Отправляем запрос к сервису site о новом заказе:
@@ -39,22 +40,27 @@
 
 
 проверяем таблицу ```orders``` видим, что сервис ```site``` зарегистрировал новый заказ:
-![screenshot](images/db-site.png)
+
+<img src="images/db-site.png" width="400"/>
 
 проверяем таблицу ```outbox``` видим, что сервис ```site``` зарегистрировал новую задачу на отправку сообщения в kafka и есть отметка об отправке ```processed_at```
-![screenshot](images/outbox-table.png)
 
-по логам сервиса ```site``` видим, что произошла публикация в kafka топик ```product-events```
-![screenshot](images/published.png)
+<img src="images/outbox-table.png" width="400"/>
+
+по логам сервиса ```site``` видим, что произошла публикация в kafka топик ```product-events``
+
+<img src="images/published.png" width="400"/>
 
 Таким образом producer на стороне сайта взял задачу из таблицы ```outbox``` и опубликовал ее в топик ```product-events```.
 
 
 Проверим таблицу ```transactions``` в сервисе-потребителе и видим, что консьюмер сервиса ```warehouse``` получил событие из kafka и зарегистрировал его.
-![screenshot](images/transactions.png)
+
+<img src="images/transactions.png" width="400"/>
 
 проверим таблицу ```balance``` и видим, что баланс ингредиентов уменьшился.
-![screenshot](images/balance.png)
+
+<img src="images/balance.png" width="250"/>
 
 В случае, если сообщение о заказе задублировалось (например, запрос обновления таблицы ```outbox``` в сервисе ```site``` завершился с ошибокой а сообщение было отправлено в kafka, что вызвало retry отправки), то при помощи проверки, была ли уже транзакция с таким же transactions_id (id заказа) определим, нужно ли обрабатывать списания из баланса еще раз:
 
