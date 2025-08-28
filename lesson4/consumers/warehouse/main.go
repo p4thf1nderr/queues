@@ -89,11 +89,7 @@ func main() {
 		if err == nil {
 			consumer.CommitMessage(msg)
 			fmt.Printf("duplicated message: event %d is already processed", event.ID)
-		}
-
-		if errors.Is(err, sql.ErrNoRows) {
-			// если записей по этому eventID нет, значит событие ранее не обрабатывалось
-			// нужно его обработать
+			return
 		}
 
 		// списываем с баланса склада ингредиенты для выпуска продукта

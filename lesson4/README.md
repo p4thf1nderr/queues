@@ -59,7 +59,7 @@
 В случае, если сообщение о заказе задублировалось (например, запрос обновления таблицы ```outbox``` в сервисе ```site``` завершился с ошибокой а сообщение было отправлено в kafka, что вызвало retry отправки), то при помощи проверки, была ли уже транзакция с таким же transactions_id (id заказа) определим, нужно ли обрабатывать списания из баланса еще раз:
 
 ```go
-// если записей по этому eventID нет, значит событие ранее не обрабатывалось
+// если записей по этому eventID нет (будет ошибка sql.ErrNoRows), значит событие ранее не обрабатывалось
 // нужно его обработать
 err = db.QueryRow("SELECT 1 FROM transactions WHERE transaction_id = $1", event.ID).Scan()
 if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -67,9 +67,11 @@ if err != nil && !errors.Is(err, sql.ErrNoRows) {
     return
 }
 
+// если ошибки sql.ErrNoRows нет, значит такую транзакцию мы уже обрабатывали, коммитим оффсет и выходим
 if err == nil {
     consumer.CommitMessage(msg)
     fmt.Printf("duplicated message: event %d is already processed", event.ID)
+    return
 }
 ```
 
