@@ -45,18 +45,18 @@
 
 проверяем таблицу ```outbox``` видим, что сервис ```site``` зарегистрировал новую задачу на отправку сообщения в kafka и есть отметка об отправке ```processed_at```
 
-<img src="images/outbox-table.png" width="400"/>
+<img src="images/outbox-table.png" width="600"/>
 
 по логам сервиса ```site``` видим, что произошла публикация в kafka топик ```product-events``
 
-<img src="images/published.png" width="400"/>
+<img src="images/published.png" width="600"/>
 
 Таким образом producer на стороне сайта взял задачу из таблицы ```outbox``` и опубликовал ее в топик ```product-events```.
 
 
 Проверим таблицу ```transactions``` в сервисе-потребителе и видим, что консьюмер сервиса ```warehouse``` получил событие из kafka и зарегистрировал его.
 
-<img src="images/transactions.png" width="400"/>
+<img src="images/transactions.png" width="500"/>
 
 проверим таблицу ```balance``` и видим, что баланс ингредиентов уменьшился.
 
