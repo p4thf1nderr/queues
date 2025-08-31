@@ -26,7 +26,7 @@ func main() {
 
 	defer nc.Drain()
 
-	fmt.Println("start listening coordinates...")
+	fmt.Println("start listening events...")
 
 	// топик: order, косньюмер группа: logist
 	sub, err := nc.QueueSubscribeSync("order", "logist")

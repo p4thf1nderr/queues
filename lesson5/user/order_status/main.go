@@ -32,14 +32,18 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println("start listening events...")
+
 	for {
 		var order Order
 
-		msg, err := sub.NextMsg(10 * time.Millisecond)
+		msg, err := sub.NextMsg(time.Minute)
 		if err != nil {
 			fmt.Printf("can't read next message from nats: %v", err)
 			continue
 		}
+
+		fmt.Println("revcieved new event")
 
 		err = json.Unmarshal(msg.Data, &order)
 		if err != nil {
@@ -47,6 +51,6 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("user recieved order status from courier: %s", order.Status)
+		fmt.Printf("user recieved order status from courier: %s\n", order.Status)
 	}
 }
