@@ -1,0 +1,90 @@
+services:
+  courier:
+    build:
+      context: ./courier
+    image: courier:0.1
+    environment:
+      NATS_URL: nats:4222
+    platform: linux/amd64
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - network
+  
+
+  courier-status:
+    build:
+      context: ./courier/status
+    image: courier-status:0.1
+    platform: linux/amd64
+    environment:
+      NATS_URL: nats:4222
+    restart: always
+    networks:
+      - network
+
+
+  logist:
+    build:
+      context: ./logist
+    image: logist:0.1
+    platform: linux/amd64
+    environment:
+      NATS_URL: nats:4222
+    restart: always
+    networks:
+      - network
+  
+  logist-courier-status:
+    build:
+      context: ./logist/courier_status
+    image: logist-courier-status:0.1
+    environment:
+      NATS_URL: nats:4222
+    platform: linux/amd64
+    restart: always
+    networks:
+      - network
+
+  logist-order-status:
+    build:
+      context: ./logist/order_status
+    image: logist-order-status:0.1
+    environment:
+      NATS_URL: nats:4222
+    platform: linux/amd64
+    restart: always
+    networks:
+      - network
+
+  user:
+    build:
+      context: ./user
+    image: user:0.1
+    platform: linux/amd64
+    restart: always
+    environment:
+      NATS_URL: nats:4222
+
+    networks:
+      - network
+
+  user-order-status:
+    build:
+      context: ./user/order_status
+    image: user-order-status:0.1
+    platform: linux/amd64
+    environment:
+      NATS_URL: nats:4222
+    restart: always
+    networks:
+      - network
+  
+  nats:
+    image: nats
+    networks:
+      - network
+    
+networks:
+  network:
